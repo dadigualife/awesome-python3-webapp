@@ -36,6 +36,7 @@ async def select(sql, args, size=None):
                 rs = await cur.fetchmany(size)
             else:
                 rs = await cur.fetchall()
+            await cur.close()
         logging.info('rows returned: %s' % len(rs))
         return rs
 
@@ -48,12 +49,15 @@ async def execute(sql, args, autocommit=True):
             async with conn.cursor(aiomysql.DictCursor) as cur:
                 await cur.execute(sql.replace('?', '%s'), args)
                 affected = cur.rowcount
+                await cur.close()
             if not autocommit:
                 await conn.commit()
         except BaseException as e:
             if not autocommit:
                 await conn.rollback()
             raise
+        #finally:
+        #    conn.close()
         return affected
 
 def create_args_string(num):
